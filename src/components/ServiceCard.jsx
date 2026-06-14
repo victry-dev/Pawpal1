@@ -52,7 +52,7 @@ export default function ServiceCard({ listing, variant = 'list' }) {
       onClick={goDetail}
       className="flex w-full flex-col overflow-hidden rounded-2xl bg-white text-left shadow-card active:scale-[0.99] transition"
     >
-      <PhotoPlaceholder category={listing.category} />
+      <PhotoPlaceholder listingId={listing.id} category={listing.category} />
       {isStore && <OffBanner />}
       <div className="flex flex-col p-3">
         <div className="flex items-start justify-between gap-2">
