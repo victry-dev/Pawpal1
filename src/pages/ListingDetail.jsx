@@ -10,10 +10,11 @@ export default function ListingDetail() {
   const navigate = useNavigate()
   const listing = getListing(id)
 
-  const [slot, setSlot] = useState(null)
   const [serviceIdx, setServiceIdx] = useState(0)
   const [pickup, setPickup] = useState(false)
   const [daycareSlot, setDaycareSlot] = useState('')
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
+  const [selectedSlot, setSelectedSlot] = useState(null)
   const [showCall, setShowCall] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -22,8 +23,10 @@ export default function ListingDetail() {
   const isTrainer = listing.category === 'Trainer'
   const isDaycare = listing.category === 'Daycare'
   const isStore = listing.category === 'Store'
+  const isDateTime = ['Veterinary', 'Groomer', 'Trainer'].includes(listing.category)
   const allowsPickup = ['Daycare', 'Veterinary', 'Groomer'].includes(listing.category)
-  const effectiveSlot = isDaycare ? daycareSlot : slot
+  const dateTimeSlot = selectedSlot ? formatBookingSlot(selectedDate, selectedSlot) : ''
+  const effectiveSlot = isDaycare ? daycareSlot : dateTimeSlot
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${listing.name} ${listing.area} Delhi`,
@@ -191,37 +194,25 @@ export default function ListingDetail() {
           <PickupDrop pickup={pickup} setPickup={setPickup} category={listing.category} />
         )}
 
-        {/* Time selection (not shown for stores) */}
-        {!isStore &&
-          (isDaycare ? (
+        {/* Time selection — daycare keeps its Playo picker; vet/groomer/trainer
+            use the date strip + time grid; stores have none. */}
+        {isDaycare && (
           <section>
             <h2 className="mb-3 text-base font-bold text-gray-900">Select date &amp; time</h2>
             <DaycareTimePicker onChange={setDaycareSlot} />
           </section>
-        ) : (
+        )}
+        {isDateTime && (
           <section>
-            <h2 className="mb-2 text-base font-bold text-gray-900">Select a time slot</h2>
-            <div className="flex flex-wrap gap-2">
-              {listing.slots.map((s) => {
-                const active = slot === s
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setSlot(s)}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                      active
-                        ? 'border-brand-green bg-brand-green text-white shadow'
-                        : 'border-gray-200 bg-white text-gray-700'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                )
-              })}
-            </div>
-            {!slot && <p className="mt-2 text-xs text-gray-400">Pick a slot to continue.</p>}
+            <DateTimePicker
+              category={listing.category}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              selectedSlot={selectedSlot}
+              onSelectSlot={setSelectedSlot}
+            />
           </section>
-          ))}
+        )}
       </div>
 
       {/* Sticky CTA */}
@@ -244,8 +235,12 @@ export default function ListingDetail() {
             }`}
           >
             {effectiveSlot
-              ? `${isTrainer ? 'Book Session' : 'Book Now'}${isDaycare ? '' : ` · ${slot}`}`
-              : 'Select a slot first'}
+              ? isTrainer
+                ? 'Book Session'
+                : 'Book Now'
+              : isDateTime
+                ? 'Select a date & time'
+                : 'Select a slot first'}
           </button>
         )}
       </div>
@@ -372,6 +367,102 @@ function shortHour(h) {
 
 function dateLabel(d) {
   return `${WEEKDAY_SHORT[d.getDay()]} ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`
+}
+
+/* ---------- Date strip + time grid (vet / groomer / trainer) ---------- */
+
+// Every half-hour from startHour to endHour inclusive (e.g. 0–23 → 48 slots,
+// 10–20 → 22 slots ending at 8:30 PM).
+function generateSlots(startHour, endHour) {
+  const slots = []
+  for (let h = startHour; h <= endHour; h++) {
+    slots.push({ hour: h, minute: 0 })
+    slots.push({ hour: h, minute: 30 })
+  }
+  return slots
+}
+
+function formatSlot({ hour, minute }) {
+  const period = hour < 12 ? 'AM' : 'PM'
+  const h = hour % 12 === 0 ? 12 : hour % 12
+  const m = minute === 0 ? '00' : '30'
+  return `${h}:${m} ${period}`
+}
+
+function formatBookingSlot(date, slot) {
+  return `${WEEKDAY_SHORT[date.getDay()]} ${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} · ${formatSlot(slot)}`
+}
+
+function DateTimePicker({ category, selectedDate, onSelectDate, selectedSlot, onSelectSlot }) {
+  const dates = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() + i)
+        return d
+      }),
+    [],
+  )
+  const slots = useMemo(
+    () => (category === 'Veterinary' ? generateSlots(0, 23) : generateSlots(10, 20)),
+    [category],
+  )
+
+  const sameDay = (a, b) => a.toDateString() === b.toDateString()
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Date strip */}
+      <div className="rounded-2xl border border-gray-100 p-4 shadow-card">
+        <p className="text-[13px] font-semibold uppercase tracking-wide text-gray-400">Select Date</p>
+        <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
+          {dates.map((d, i) => {
+            const active = sameDay(d, selectedDate)
+            return (
+              <button
+                key={i}
+                onClick={() => onSelectDate(d)}
+                className={`flex min-w-[52px] shrink-0 flex-col items-center rounded-full border px-3.5 py-2.5 transition ${
+                  active
+                    ? 'border-brand-green bg-brand-green text-white'
+                    : 'border-gray-200 bg-white text-gray-900'
+                }`}
+              >
+                <span className={`text-[10px] font-semibold ${active ? 'text-white/80' : 'text-gray-400'}`}>
+                  {DAY_NAMES[d.getDay()]}
+                </span>
+                <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Time grid */}
+      <div>
+        <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-gray-400">Select Time</p>
+        <div className="max-h-[280px] overflow-y-auto">
+          <div className="grid grid-cols-3 gap-2">
+            {slots.map((s) => {
+              const active =
+                selectedSlot && selectedSlot.hour === s.hour && selectedSlot.minute === s.minute
+              return (
+                <button
+                  key={`${s.hour}-${s.minute}`}
+                  onClick={() => onSelectSlot(s)}
+                  className={`rounded-lg border-[0.5px] border-brand-green px-1 py-2.5 text-center text-xs font-semibold transition ${
+                    active ? 'bg-brand-green text-white' : 'bg-white text-brand-green'
+                  }`}
+                >
+                  {formatSlot(s)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function DaycareTimePicker({ onChange }) {
