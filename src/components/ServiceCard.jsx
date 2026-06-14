@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { CATEGORY_META } from '../data.js'
+import { CATEGORY_META, getPhoto } from '../data.js'
 import { usePhotos } from '../context/PhotoContext.jsx'
 import PawIcon from './PawIcon.jsx'
+import CoverImage from './CoverImage.jsx'
 
 // `variant` = 'nearby' (compact horizontal card) | 'list' (full-width row card)
 export default function ServiceCard({ listing, variant = 'list' }) {
@@ -114,17 +115,14 @@ function OffBanner() {
 // otherwise a green gradient. Category badge stays overlaid top-left.
 function PhotoPlaceholder({ listingId, category }) {
   const { photosMap } = usePhotos()
-  const photo = photosMap[listingId]?.[0]
+  const photoSrc = photosMap[listingId]?.[0] || getPhoto(listingId)
   const meta = CATEGORY_META[category] || { icon: '🐾', color: '#1B5E3B' }
   return (
     <div className="relative h-[120px] w-full overflow-hidden bg-gradient-to-br from-[#1B5E3B] to-[#2D7A4F]">
-      {photo ? (
-        <img src={photo} alt={category} className="absolute inset-0 h-full w-full object-cover" />
-      ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-5xl opacity-20">
-          {meta.icon}
-        </span>
-      )}
+      <span className="absolute inset-0 flex items-center justify-center text-5xl opacity-20">
+        {meta.icon}
+      </span>
+      <CoverImage src={photoSrc} alt={category} className="absolute inset-0 h-full w-full object-cover" />
       <span
         className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold shadow"
         style={{ color: meta.color }}
@@ -138,7 +136,7 @@ function PhotoPlaceholder({ listingId, category }) {
 
 function TrainerCard({ listing, navigate }) {
   const { photosMap } = usePhotos()
-  const photo = photosMap[listing.id]?.[0]
+  const photoSrc = photosMap[listing.id]?.[0] || getPhoto(listing.id)
   const service = listing.services[0]
   const goDetail = () => navigate(`/listing/${listing.id}`)
   const goBook = (e) => {
@@ -158,18 +156,17 @@ function TrainerCard({ listing, navigate }) {
       onClick={goDetail}
       className="flex cursor-pointer gap-3 rounded-2xl bg-white p-3 shadow-card active:scale-[0.99] transition"
     >
-      {/* Avatar — uploaded photo if available, else initials */}
-      {photo ? (
-        <img
-          src={photo}
-          alt={listing.name}
-          className="h-14 w-14 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-green text-base font-extrabold text-white">
+      {/* Avatar — photo if available, else initials */}
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-brand-green">
+        <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-white">
           {initials(listing.name)}
         </div>
-      )}
+        <CoverImage
+          src={photoSrc}
+          alt={listing.name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <h3 className="truncate text-[15px] font-bold text-gray-900">{listing.name}</h3>

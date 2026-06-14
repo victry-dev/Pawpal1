@@ -280,3 +280,37 @@ export const PAST_BOOKINGS = [
 export function getListing(id) {
   return LISTINGS.find((l) => l.id === id)
 }
+
+// Bundled photos that ship with the app (visible to everyone on the live site).
+// Each place gets its OWN photo. Drop files in /public/photos named by id + ".jpg".
+// If a place's own file is missing, it falls back to its category photo, then to
+// the green gradient placeholder — so nothing ever breaks.
+const LISTING_PHOTOS = {
+  'happy-paws': '/photos/happy-paws.jpg',
+  'furever-friends': '/photos/furever-friends.jpg',
+  petcure: '/photos/petcure.jpg',
+  'delhi-pet-hospital': '/photos/delhi-pet-hospital.jpg',
+  'heads-up-for-tails': '/photos/heads-up-for-tails.jpg',
+  petzone: '/photos/petzone.jpg',
+  'snip-wag': '/photos/snip-wag.jpg',
+  'groom-room': '/photos/groom-room.jpg',
+  'arjun-mehta': '/photos/arjun-mehta.jpg',
+  'priya-nair': '/photos/priya-nair.jpg',
+}
+
+// Optional per-category fallback (only used if a place has no own photo above).
+const CATEGORY_PHOTOS = {
+  Daycare: '/photos/daycare.jpg',
+  Veterinary: '/photos/vet.jpg',
+  Store: '/photos/store.jpg',
+  Groomer: '/photos/groomer.jpg',
+  Trainer: '/photos/trainer.jpg',
+}
+const EVENT_PHOTO = '/photos/sunday-dog-meetup.jpg'
+
+export function getPhoto(id) {
+  if (LISTING_PHOTOS[id]) return LISTING_PHOTOS[id]
+  if (id === FEATURED_EVENT.id) return EVENT_PHOTO
+  const listing = LISTINGS.find((l) => l.id === id)
+  return listing ? CATEGORY_PHOTOS[listing.category] || null : null
+}

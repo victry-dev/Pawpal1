@@ -1,5 +1,7 @@
 import { useRef } from 'react'
 import { usePhotos } from '../context/PhotoContext.jsx'
+import { getPhoto } from '../data.js'
+import CoverImage from './CoverImage.jsx'
 
 // Hero photo slot used on detail pages.
 // Uploading is open to any logged-in user (easy demo flow). Photos are compressed
@@ -36,14 +38,17 @@ export default function PhotoGallery({ listingId }) {
     <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
   )
 
-  // No photos yet → gradient placeholder with an upload button.
+  // No uploaded photos → show the bundled photo if one ships with the app,
+  // otherwise the gradient "Photos coming soon" placeholder.
   if (photos.length === 0) {
+    const bundled = getPhoto(listingId)
     return (
-      <div className="relative h-[220px] w-full bg-gradient-to-br from-[#1B5E3B] to-[#2D7A4F]">
+      <div className="relative h-[220px] w-full overflow-hidden bg-gradient-to-br from-[#1B5E3B] to-[#2D7A4F]">
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <CameraIcon />
           <p className="mt-2 text-[13px] font-medium text-white">Photos coming soon</p>
         </div>
+        <CoverImage src={bundled} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <button
           onClick={openPicker}
           aria-label="Upload photo"

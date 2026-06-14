@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FEATURED_EVENT, UPCOMING_EVENTS } from '../data.js'
+import { FEATURED_EVENT, UPCOMING_EVENTS, getPhoto } from '../data.js'
 import { makeBookingId } from '../store.jsx'
 import { usePhotos } from '../context/PhotoContext.jsx'
+import CoverImage from '../components/CoverImage.jsx'
 
 export default function Events() {
   const navigate = useNavigate()
   const { photosMap } = usePhotos()
-  const featuredPhoto = photosMap[FEATURED_EVENT.id]?.[0]
+  const featuredPhoto = photosMap[FEATURED_EVENT.id]?.[0] || getPhoto(FEATURED_EVENT.id)
   const [pass, setPass] = useState(null) // pass id once bought
 
   if (pass) return <PassConfirmed passId={pass} onClose={() => setPass(null)} />
@@ -25,15 +26,12 @@ export default function Events() {
         className="cursor-pointer overflow-hidden rounded-3xl bg-white shadow-card active:scale-[0.99] transition"
       >
         <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-green to-emerald-500">
-          {featuredPhoto ? (
-            <img
-              src={featuredPhoto}
-              alt={FEATURED_EVENT.title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <span className="text-7xl">{FEATURED_EVENT.emoji}</span>
-          )}
+          <span className="text-7xl">{FEATURED_EVENT.emoji}</span>
+          <CoverImage
+            src={featuredPhoto}
+            alt={FEATURED_EVENT.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           <span className="absolute left-4 top-4 rounded-full bg-brand-orange px-3 py-1 text-[11px] font-bold text-white">
             ⭐ Featured
           </span>

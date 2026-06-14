@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../store.jsx'
 import { usePhotos } from '../context/PhotoContext.jsx'
-import { LISTINGS, CATEGORY_META } from '../data.js'
+import { LISTINGS, CATEGORY_META, getPhoto } from '../data.js'
 import CategoryBadge from '../components/CategoryBadge.jsx'
+import CoverImage from '../components/CoverImage.jsx'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -49,17 +50,19 @@ export default function Profile() {
         </div>
 
         {bookings.map((b) => {
-          const photo = photosMap[idByName[b.listing]]?.[0]
+          const listingId = idByName[b.listing]
+          const photoSrc = photosMap[listingId]?.[0] || getPhoto(listingId)
           return (
             <div key={b.id} className="flex gap-3 rounded-2xl bg-white p-3 shadow-card">
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl">
-                {photo ? (
-                  <img src={photo} alt={b.listing} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1B5E3B] to-[#2D7A4F] text-2xl">
-                    {CATEGORY_META[b.category]?.icon || '🐾'}
-                  </div>
-                )}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1B5E3B] to-[#2D7A4F] text-2xl">
+                  {CATEGORY_META[b.category]?.icon || '🐾'}
+                </div>
+                <CoverImage
+                  src={photoSrc}
+                  alt={b.listing}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
                 <div className="flex items-center justify-between gap-2">
